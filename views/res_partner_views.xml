@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_add_allowed_pricelists" model="ir.ui.view">
+        <field name="name">res.partner.form.add.allowed.pricelists</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="Configuración del Portal" groups="base.group_portal">
+                    <group>
+                        <field name="allowed_pricelist_ids" widget="many2many_tags"/>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>
