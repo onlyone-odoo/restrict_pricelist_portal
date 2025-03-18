@@ -17,6 +17,6 @@
     "depends": ["website_sale", "portal"],
     "data": [
         "views/res_partner_views.xml",
-        "views/tempalte.xml",
+        "views/tempaltes.xml",
     ],
 }
