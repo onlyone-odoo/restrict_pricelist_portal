@@ -38,34 +38,29 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
             **post,
         )
 
-        # Filtrar las listas de precios según allowed_pricelist_ids
+        # Asegurarse de que la lista de precios actual sea válida
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
-            # Filtrar las listas de precios disponibles
-            available_pricelists = (
-                request.env["product.pricelist"]
-                .sudo()
-                .search(
-                    [
-                        ("website_id", "in", (False, request.website.id)),
-                        ("selectable", "=", True),
-                        ("id", "<=", max_allowed_id),
-                    ]
-                )
-            )
-            response.qcontext["website_sale_pricelists"] = available_pricelists
-
-            # Asegurarse de que la lista de precios actual sea válida
             current_pricelist = response.qcontext["pricelist"]
             if current_pricelist.id > max_allowed_id:
+                available_pricelists = (
+                    request.env["product.pricelist"]
+                    .sudo()
+                    .search(
+                        [
+                            ("website_id", "in", (False, request.website.id)),
+                            ("selectable", "=", True),
+                            ("id", "<=", max_allowed_id),
+                        ]
+                    )
+                )
                 response.qcontext["pricelist"] = (
                     available_pricelists[0]
                     if available_pricelists
                     else request.website.get_current_pricelist()
                 )
-                # Actualizar la sesión y el pedido con la lista válida
                 request.session["website_sale_current_pl"] = response.qcontext[
                     "pricelist"
                 ].id
@@ -81,15 +76,24 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         sitemap=False,
     )
     def pricelist_change(self, pricelist, **post):
-        # Validar que la lista seleccionada esté permitida si hay restricción
+        # Validar que la lista seleccionada esté permitida
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
             if pricelist.id > max_allowed_id:
-                # Redirigir a la página de la tienda sin cambiar la lista
+                # Agregar mensaje de advertencia y redirigir
+                request.session["website_sale_warning"] = (
+                    _(
+                        "No tiene habilitada la lista de precios '%s'. Por favor, seleccione una lista permitida."
+                    )
+                    % pricelist.name
+                )
                 return request.redirect(post.get("r", "/shop"))
 
+        # Limpiar cualquier mensaje previo si la lista es válida
+        if "website_sale_warning" in request.session:
+            del request.session["website_sale_warning"]
         return super(WebsiteSaleRestrictedPricelists, self).pricelist_change(
             pricelist, **post
         )
@@ -98,7 +102,7 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         ["/shop/pricelist"], type="http", auth="public", website=True, sitemap=False
     )
     def pricelist(self, promo, **post):
-        # Validar el código de promoción si hay restricción
+        # Validar el código de promoción
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids and promo:
@@ -109,9 +113,15 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
                 .search([("code", "=", promo)], limit=1)
             )
             if pricelist_sudo and pricelist_sudo.id > max_allowed_id:
+                request.session["website_sale_warning"] = _(
+                    "El código '%s' corresponde a la lista de precios '%s', que no tiene habilitada."
+                ) % (promo, pricelist_sudo.name)
                 redirect = post.get("r", "/shop/cart")
                 return request.redirect(f"{redirect}?code_not_available=1")
 
+        # Limpiar mensaje si el código es válido
+        if "website_sale_warning" in request.session:
+            del request.session["website_sale_warning"]
         return super(WebsiteSaleRestrictedPricelists, self).pricelist(promo, **post)
 
     def _prepare_product_values(self, product, category, search, **kwargs):
@@ -119,32 +129,30 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
             product, category, search, **kwargs
         )
 
-        # Asegurar que el pricelist esté permitido si hay restricción
+        # Asegurar que el pricelist esté permitido
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
             current_pricelist = values["pricelist"]
-            available_pricelists = (
-                request.env["product.pricelist"]
-                .sudo()
-                .search(
-                    [
-                        ("website_id", "in", (False, request.website.id)),
-                        ("selectable", "=", True),
-                        ("id", "<=", max_allowed_id),
-                    ]
-                )
-            )
             if current_pricelist.id > max_allowed_id:
+                available_pricelists = (
+                    request.env["product.pricelist"]
+                    .sudo()
+                    .search(
+                        [
+                            ("website_id", "in", (False, request.website.id)),
+                            ("selectable", "=", True),
+                            ("id", "<=", max_allowed_id),
+                        ]
+                    )
+                )
                 values["pricelist"] = (
                     available_pricelists[0]
                     if available_pricelists
                     else request.website.get_current_pricelist()
                 )
-                # Actualizar la sesión y el pedido con la lista válida
                 request.session["website_sale_current_pl"] = values["pricelist"].id
                 request.website.sale_get_order(update_pricelist=True)
-            values["website_sale_pricelists"] = available_pricelists
 
         return values
