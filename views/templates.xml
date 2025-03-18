@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <template id="products_inherit" inherit_id="website_sale.products" name="Show Pricelist Warning">
-        <xpath expr="//div[@id='products_grid_before']" position="before">
-            <t t-if="request.session.get('website_sale_warning')">
-                <div class="alert alert-warning mt-3" role="alert">
-                    <t t-esc="request.session.pop('website_sale_warning')"/>
-                </div>
-            </t>
-        </xpath>
-    </template>
+<templates id="products_inherit" inherit_id="website_sale.products" name="Show Pricelist Warning">
+    <xpath expr="//div[@id='products_grid_before']" position="before">
+        <t t-if="request.session.get('website_sale_warning')">
+            <div class="alert alert-warning mt-3" role="alert">
+                <t t-esc="request.session.pop('website_sale_warning')"/>
+            </div>
+        </t>
+    </xpath>
+</templates>
