@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
     <template id="products_inherit" inherit_id="website_sale.products" name="Show Pricelist Warning">
         <xpath expr="//div[@id='products_grid_before']" position="before">
             <t t-if="request.session.get('website_sale_warning')">
@@ -9,4 +8,3 @@
             </t>
         </xpath>
     </template>
-</odoo>
