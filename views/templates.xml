@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="pricelist_list_inherit" inherit_id="website_sale.pricelist_list" name="Show Pricelist Warning">
-        <xpath expr="//div[@t-attf-class='o_pricelist_dropdown dropdown #{_classes if hasPricelistDropdown else 'd-none'}']" position="inside">
+        <xpath expr="//a[@data-bs-toggle='dropdown']" position="after">
             <t t-if="request.session.get('website_sale_warning')">
                 <div class="alert alert-warning mt-2 mb-2" role="alert">
                     <t t-esc="request.session.pop('website_sale_warning')"/>
