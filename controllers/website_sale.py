@@ -27,7 +27,6 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         ppg=False,
         **post,
     ):
-        # Llamar al método original
         response = super(WebsiteSaleRestrictedPricelists, self).shop(
             page=page,
             category=category,
@@ -38,7 +37,6 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
             **post,
         )
 
-        # Asegurarse de que la lista de precios actual sea válida
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
@@ -76,13 +74,11 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         sitemap=False,
     )
     def pricelist_change(self, pricelist, **post):
-        # Validar que la lista seleccionada esté permitida
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
             if pricelist.id > max_allowed_id:
-                # Agregar mensaje de advertencia y redirigir
                 request.session["website_sale_warning"] = (
                     _(
                         "No tiene habilitada la lista de precios '%s'. Por favor, seleccione una lista permitida."
@@ -91,7 +87,6 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
                 )
                 return request.redirect(post.get("r", "/shop"))
 
-        # Limpiar cualquier mensaje previo si la lista es válida
         if "website_sale_warning" in request.session:
             del request.session["website_sale_warning"]
         return super(WebsiteSaleRestrictedPricelists, self).pricelist_change(
@@ -102,7 +97,6 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         ["/shop/pricelist"], type="http", auth="public", website=True, sitemap=False
     )
     def pricelist(self, promo, **post):
-        # Validar el código de promoción
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids and promo:
@@ -119,7 +113,6 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
                 redirect = post.get("r", "/shop/cart")
                 return request.redirect(f"{redirect}?code_not_available=1")
 
-        # Limpiar mensaje si el código es válido
         if "website_sale_warning" in request.session:
             del request.session["website_sale_warning"]
         return super(WebsiteSaleRestrictedPricelists, self).pricelist(promo, **post)
@@ -129,7 +122,6 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
             product, category, search, **kwargs
         )
 
-        # Asegurar que el pricelist esté permitido
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
