@@ -5,21 +5,6 @@ from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 
 class WebsiteSaleRestrictedPricelists(WebsiteSale):
-    def _get_pricelist_available(self, show_visible=False):
-        """Sobreescribir para restringir las listas de precios según allowed_pricelist_ids"""
-        pricelists = super(
-            WebsiteSaleRestrictedPricelists, self
-        )._get_pricelist_available(show_visible=show_visible)
-
-        # Aplicar restricción si el contacto tiene allowed_pricelist_ids definido
-        partner = request.env.user.partner_id
-        allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
-        if allowed_pricelist_ids:
-            max_allowed_id = max(allowed_pricelist_ids)
-            pricelists = pricelists.filtered(lambda pl: pl.id <= max_allowed_id)
-
-        return pricelists
-
     @http.route(
         [
             "/shop",
@@ -53,13 +38,33 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
             **post,
         )
 
-        # Actualizar las listas de precios en el qcontext si hay restricción
+        # Filtrar las listas de precios según allowed_pricelist_ids
         partner = request.env.user.partner_id
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
-            available_pricelists = self._get_pricelist_available(show_visible=True)
+            # Obtener las listas de precios disponibles desde el website y filtrarlas
+            available_pricelists = (
+                request.env["product.pricelist"]
+                .sudo()
+                .search(
+                    [
+                        ("website_id", "in", (False, request.website.id)),
+                        ("selectable", "=", True),
+                        ("id", "<=", max_allowed_id),
+                    ]
+                )
+            )
             response.qcontext["website_sale_pricelists"] = available_pricelists
+
+            # Asegurarse de que la lista de precios actual sea válida
+            current_pricelist = response.qcontext["pricelist"]
+            if current_pricelist.id > max_allowed_id:
+                response.qcontext["pricelist"] = (
+                    available_pricelists[0]
+                    if available_pricelists
+                    else request.website.get_current_pricelist()
+                )
 
         return response
 
@@ -115,7 +120,17 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
             current_pricelist = values["pricelist"]
-            available_pricelists = self._get_pricelist_available(show_visible=True)
+            available_pricelists = (
+                request.env["product.pricelist"]
+                .sudo()
+                .search(
+                    [
+                        ("website_id", "in", (False, request.website.id)),
+                        ("selectable", "=", True),
+                        ("id", "<=", max_allowed_id),
+                    ]
+                )
+            )
             if current_pricelist.id > max_allowed_id:
                 values["pricelist"] = (
                     available_pricelists[0]
