@@ -43,7 +43,7 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
         allowed_pricelist_ids = partner.allowed_pricelist_ids.ids
         if allowed_pricelist_ids:
             max_allowed_id = max(allowed_pricelist_ids)
-            # Obtener las listas de precios disponibles desde el website y filtrarlas
+            # Filtrar las listas de precios disponibles
             available_pricelists = (
                 request.env["product.pricelist"]
                 .sudo()
@@ -65,6 +65,11 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
                     if available_pricelists
                     else request.website.get_current_pricelist()
                 )
+                # Actualizar la sesión y el pedido con la lista válida
+                request.session["website_sale_current_pl"] = response.qcontext[
+                    "pricelist"
+                ].id
+                request.website.sale_get_order(update_pricelist=True)
 
         return response
 
@@ -137,6 +142,9 @@ class WebsiteSaleRestrictedPricelists(WebsiteSale):
                     if available_pricelists
                     else request.website.get_current_pricelist()
                 )
+                # Actualizar la sesión y el pedido con la lista válida
+                request.session["website_sale_current_pl"] = values["pricelist"].id
+                request.website.sale_get_order(update_pricelist=True)
             values["website_sale_pricelists"] = available_pricelists
 
         return values
