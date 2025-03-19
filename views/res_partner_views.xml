@@ -5,13 +5,9 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
-            <notebook position="inside">
-                <page string="Configuración del Portal" groups="base.group_portal">
-                    <group>
-                        <field name="allowed_pricelist_ids" widget="many2many_tags"/>
-                    </group>
-                </page>
-            </notebook>
+            <group name="misc" string="Misc" position="inside">
+                    <field name="allowed_pricelist_ids" widget="many2many_tags"/>
+            </group>
         </field>
     </record>
 </odoo>
